@@ -1,0 +1,5 @@
+-- INSERT INTO person (fio, person_id)
+-- VALUES ('Алексеев Алексей Алексеевич', null);
+--
+-- INSERT INTO person (fio, person_id)
+-- VALUES ('Иванов Иван Иванович', 1);
