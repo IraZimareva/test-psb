@@ -16,6 +16,7 @@ public class TestPSBApplication {
         PersonRepository personRepository =
                 configurableApplicationContext.getBean(PersonRepository.class);
 
+        //TEST DATA
         //Первый (верхний) уровень иерархии
         Person personAlAl = new Person("Алексеев Алексей", null);
         personRepository.save(personAlAl);

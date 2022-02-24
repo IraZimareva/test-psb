@@ -1,5 +1,7 @@
 package zimareva.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import zimareva.entity.Person;
@@ -21,24 +23,35 @@ public class PersonService {
     }
 
     public List<Person> getPeople() {
-        List<Person> sortedPeople1Lvl = StreamSupport
+        List<Person> people = StreamSupport
                 .stream(personRepository.findAll().spliterator(), false)
                 .sorted(new PersonComparator())
+                .peek(p -> p.sortContacts())
                 .collect(Collectors.toList());
-        //sortedPeople1Lvl.forEach(Person::streamContacts);
-        return sortedPeople1Lvl;
+        this.getJSONListResult(people);
+        return people;
     }
 
-    /*public List<Person> getPeople (){
-        return StreamSupport
-                .stream(personRepository.findAll().spliterator(),false)
-                .sorted(new PersonComparator())
-                .collect(Collectors.toList());
-    }*/
-
-    public Person getPersonById (Long id){
-        return personRepository.findById(id).orElseThrow(()->
+    public Person getPersonById(Long id) {
+        Person person = personRepository.findById(id).orElseThrow(() ->
                 new PersonNotFoundException(id));
+        person.sortContacts();
+        return person;
+    }
+
+    private String getJSONListResult (List<Person> people){
+        ObjectMapper mapper = new ObjectMapper();
+        String regRespStr = null;
+        try{
+            regRespStr = mapper
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(people);
+            System.out.println("Formatted JSON Response:" + regRespStr);
+        }
+        catch(JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return regRespStr;
     }
 
 

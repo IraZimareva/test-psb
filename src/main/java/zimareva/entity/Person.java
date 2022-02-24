@@ -1,16 +1,14 @@
 package zimareva.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import zimareva.service.PersonService;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 @Entity
 @Table(name = "person")
@@ -22,20 +20,14 @@ public class Person {
     @NotEmpty(message = "FIO should not be empty")
     private String fio;
 
-
-//    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JoinColumn(name = "id")
-    //todo: подумать насчет каскадного типа
     @OneToMany (
             mappedBy = "person",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+            orphanRemoval = false
     )
     @JsonIgnoreProperties("person")
      private List<Person> contacts = new ArrayList<>();
 
 
-    //todo: проверить реализацию рекурсии сущностей
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "person_id")
     @JsonIgnoreProperties("contacts")
@@ -50,6 +42,7 @@ public class Person {
         this.person = person;
     }
 
+    @JsonIgnore
     public Long getId() {
         return id;
     }
@@ -74,6 +67,7 @@ public class Person {
         this.contacts = contacts;
     }
 
+    @JsonIgnore
     public Person getPerson() {
         return person;
     }
@@ -82,18 +76,24 @@ public class Person {
         this.person = person;
     }
 
-    //public Stream<Person> streamContacts() {
-    public void streamContacts() {
-        StreamSupport.stream(this.contacts.spliterator(), false)
-                .sorted(new PersonComparator())
-                .forEach(p -> streamContacts());
+    public void sortContacts() {
+        //условие выхода из рекурсии
+        if (this.contacts == null){
+            return;
+        }
 
-        /*return Stream.concat(
-                Stream.of(this),
-                this.contacts.stream().flatMap(Person::streamContacts));
+        //сортируем List
+        Collections.sort(this.contacts, new Comparator<Person>() {
+            @Override
+            public int compare(Person o1, Person o2) {
+                return o1.getFio().compareTo(o2.getFio());
+            }
+        });
 
-        List<Person> sortedPeople1Lvl = StreamSupport.stream(personRepository.findAll().spliterator(), false)
-                .sorted(new PersonComparator());*/
+        //рекурсивно вызываем сортировку на след.уровне иерархии
+        for (Person curr : this.getContacts()){
+            curr.sortContacts();
+        }
     }
 
     @Override
@@ -103,11 +103,5 @@ public class Person {
                 ", fio='" + fio + '\'' +
                 ", person=" + person +
                 '}';
-    }
-
-    class PersonComparator implements Comparator<Person> {
-        public int compare(Person a, Person b){
-            return a.getFio().compareTo(b.getFio());
-        }
     }
 }
